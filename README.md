@@ -9,9 +9,11 @@ Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) 
 4. When the set of showtimes changes, the workflow commits the updated `state.json` back to the repo.
 
 ## One-time setup
-1. **CallMeBot key**: add `+34 644 66 32 62` to your contacts and send it the WhatsApp message
-   `I allow callmebot to send me messages`. It replies with your API key.
-   (If that number changed, check https://www.callmebot.com/blog/free-api-whatsapp-messages/.)
+1. **CallMeBot key**: add `+34 698 28 89 73` to your contacts and send it the WhatsApp message
+   `I allow callmebot to send me messages`. It replies with your API key within ~2 minutes;
+   if not, CallMeBot says to wait 24h before trying again.
+   The bot number changes from time to time; the current one is always on
+   https://www.callmebot.com/blog/free-api-whatsapp-messages/.
 2. **Repo secrets** (Settings → Secrets and variables → Actions):
    - `CALLMEBOT_PHONE`: your number with country code, e.g. `+2010xxxxxxxx`
    - `CALLMEBOT_APIKEY`: the key from step 1
