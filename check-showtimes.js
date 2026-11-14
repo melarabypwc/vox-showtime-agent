@@ -42,7 +42,7 @@ function labelToDate(label, todayYmd) {
 async function scrape() {
   // BROWSER_CHANNEL=chrome uses your installed Google Chrome instead of Playwright's Chromium.
   const browser = await chromium.launch({
-    headless: true,
+    headless: !process.env.HEADED, // HEADED=1 runs a visible window (use xvfb-run on Linux)
     channel: process.env.BROWSER_CHANNEL || undefined,
     args: ['--disable-blink-features=AutomationControlled'], // VOX's Akamai bot check rejects the automation flag
   });
