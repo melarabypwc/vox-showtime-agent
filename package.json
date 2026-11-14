@@ -1,0 +1,17 @@
+{
+  "name": "vox-showtime-agent",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "check": "node check-showtimes.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "playwright": "^1.49.1"
+  },
+  "private": true
+}
