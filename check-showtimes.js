@@ -1,10 +1,12 @@
 // Checks VOX Cinemas Egypt for new showtimes of a movie at one cinema,
-// and sends a WhatsApp alert (via CallMeBot) when new ones appear.
+// and sends Telegram and/or WhatsApp (CallMeBot) alerts when new ones appear.
 //
 // Env vars:
 //   CALLMEBOT_PHONE   your WhatsApp number with country code, e.g. +2010xxxxxxxx
 //   CALLMEBOT_APIKEY  the key CallMeBot sent you
 //   CALLMEBOT_RECIPIENTS  optional extra people, "+2010xxxx:key1,+2011xxxx:key2"
+//   TELEGRAM_BOT_TOKEN    token from @BotFather
+//   TELEGRAM_CHAT_ID      chat id(s) to alert, comma-separated (people or groups)
 //   MOVIE_SLUG        default: dune-part-three
 //   CINEMA_SLUG       default: city-centre-almaza
 //   DRY_RUN=1         print the alert instead of sending it
@@ -143,15 +145,10 @@ function recipients() {
   return list;
 }
 
+// Returns how many WhatsApp recipients CallMeBot accepted.
 async function sendWhatsApp(text) {
-  if (process.env.DRY_RUN) {
-    console.log('--- DRY RUN, would send ---\n' + text);
-    return;
-  }
-  const people = recipients();
-  if (!people.length) throw new Error('Set CALLMEBOT_PHONE + CALLMEBOT_APIKEY and/or CALLMEBOT_RECIPIENTS');
   let sent = 0;
-  for (const { phone, apikey } of people) {
+  for (const { phone, apikey } of recipients()) {
     const masked = phone.slice(0, 4) + '…' + phone.slice(-3);
     try {
       const url = 'https://api.callmebot.com/whatsapp.php?' + new URLSearchParams({ phone, apikey, text });
@@ -165,8 +162,46 @@ async function sendWhatsApp(text) {
     }
     await new Promise((res) => setTimeout(res, 2000)); // CallMeBot rate-limits rapid calls
   }
+  return sent;
+}
+
+// TELEGRAM_CHAT_ID can list several chats (people or groups), comma-separated.
+// Returns how many chats Telegram delivered to.
+async function sendTelegram(text) {
+  const token = (process.env.TELEGRAM_BOT_TOKEN || '').trim();
+  const chats = (process.env.TELEGRAM_CHAT_ID || '').split(',').map((x) => x.trim()).filter(Boolean);
+  if (!token || !chats.length) return 0;
+  let sent = 0;
+  for (const chat_id of chats) {
+    try {
+      const r = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ chat_id, text, disable_web_page_preview: true }),
+      });
+      const body = await r.json();
+      if (!body.ok) throw new Error(`${r.status}: ${body.description}`);
+      console.log(`Telegram alert sent to chat ${chat_id}.`);
+      sent++;
+    } catch (e) {
+      console.error(`Telegram failed for chat ${chat_id}: ${e.message}`);
+    }
+  }
+  return sent;
+}
+
+async function notify(text) {
+  if (process.env.DRY_RUN) {
+    console.log('--- DRY RUN, would send ---\n' + text);
+    return;
+  }
+  const hasTelegram = process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID;
+  if (!recipients().length && !hasTelegram) {
+    throw new Error('No alert channel configured: set TELEGRAM_* and/or CALLMEBOT_* secrets');
+  }
+  const sent = (await sendTelegram(text)) + (await sendWhatsApp(text));
   // Fail only if nobody got it, so the run retries next time instead of losing the alert.
-  if (!sent) throw new Error('CallMeBot failed for every recipient');
+  if (!sent) throw new Error('Every alert channel failed');
 }
 
 (async () => {
@@ -179,10 +214,10 @@ async function sendWhatsApp(text) {
 
   if (!prev) {
     console.log('First run: saving baseline.');
-    if (process.env.ALERT_ON_FIRST_RUN && showtimes.length) await sendWhatsApp(buildMessage(showtimes, title));
+    if (process.env.ALERT_ON_FIRST_RUN && showtimes.length) await notify(buildMessage(showtimes, title));
   } else if (newOnes.length) {
     console.log(`${newOnes.length} new showtime(s).`);
-    await sendWhatsApp(buildMessage(newOnes, title));
+    await notify(buildMessage(newOnes, title));
   } else {
     console.log('No new showtimes.');
   }
