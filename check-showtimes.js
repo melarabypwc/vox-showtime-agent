@@ -253,9 +253,17 @@ function buildHeartbeat(showtimes, title, newCount) {
   const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const lines = [`✅ VOX agent is running`];
   lines.push(`Watching ${title || MOVIE} at VOX ${cinema}.`);
+  // "28 upcoming IMAX showtimes" for one format, "40 upcoming showtimes (28 IMAX, 12 Standard)" for several.
+  const byFormat = {};
+  for (const s of upcoming) byFormat[s.format] = (byFormat[s.format] || 0) + 1;
+  const formats = Object.entries(byFormat).sort((a, b) => b[1] - a[1]);
+  const what =
+    formats.length === 1
+      ? `${upcoming.length} upcoming ${formats[0][0]} showtimes`
+      : `${upcoming.length} upcoming showtimes (${formats.map(([f, n]) => `${n} ${f}`).join(', ')})`;
   lines.push(
     days.length
-      ? `${upcoming.length} upcoming showtimes on ${days.length} day(s): ${fmtDate(days[0])} to ${fmtDate(days[days.length - 1])}.`
+      ? `${what} on ${days.length} day(s): ${fmtDate(days[0])} to ${fmtDate(days[days.length - 1])}.`
       : 'No upcoming showtimes listed right now.'
   );
   if (newCount) lines.push(`${newCount} new showtime(s) found in this check (alert sent separately).`);
