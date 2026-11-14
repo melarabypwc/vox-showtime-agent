@@ -7,6 +7,9 @@ Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) 
 2. It loads every date tab for `dune-part-three` at `city-centre-almaza` and collects each showtime's booking ID.
 3. It compares them with `state.json`. Any ID not seen before triggers one alert (ntfy, Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
 4. When the set of showtimes changes, the workflow commits the updated `state.json` back to the repo.
+5. Once a day, the first successful check at or after **10:00 Cairo time** sends a short
+   "✅ VOX agent is running" status message to the same channels. If it stops arriving, the
+   agent is broken (VOX blocking it, the workflow disabled, etc.). Change the hour with `HEARTBEAT_HOUR`.
 
 ## One-time setup
 Set up any of ntfy, Telegram or WhatsApp (CallMeBot). Every alert goes to all configured
@@ -55,5 +58,5 @@ Delete `state.json` to reset the baseline. Set `ALERT_ON_FIRST_RUN=1` to also ge
 
 ## Notes
 - GitHub's cron is best-effort and can run late during busy periods.
-- GitHub disables scheduled workflows after 60 days with no repo activity. State commits only happen when showtimes change, so re-enable the workflow if it stops.
+- GitHub disables scheduled workflows after 60 days with no repo activity. The daily status message saves a commit each day, which keeps the repo active.
 - VOX's bot protection could start blocking GitHub's IPs (`ERR_HTTP2_PROTOCOL_ERROR`). If runs keep failing, run it on your Mac instead (cron/launchd).

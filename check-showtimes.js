@@ -11,6 +11,7 @@
 //   MOVIE_SLUG        default: dune-part-three
 //   CINEMA_SLUG       default: city-centre-almaza
 //   DRY_RUN=1         print the alert instead of sending it
+//   HEARTBEAT_HOUR    Cairo hour for the daily "agent is running" message (default 10)
 
 const fs = require('fs');
 const path = require('path');
@@ -193,7 +194,7 @@ async function sendTelegram(text) {
 
 // ntfy.sh push notifications: no account needed, just subscribe to the topic in the ntfy app.
 // Returns 1 if delivered, 0 if not configured or failed.
-async function sendNtfy(text) {
+async function sendNtfy(text, opts = {}) {
   const topic = (process.env.NTFY_TOPIC || '').trim();
   if (!topic) return 0;
   const server = (process.env.NTFY_SERVER || 'https://ntfy.sh').replace(/\/$/, '');
@@ -204,10 +205,10 @@ async function sendNtfy(text) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         topic,
-        title: first.replace(/^🎬\s*/, ''),
+        title: first.replace(/^(🎬|✅)\s*/, ''),
         message: rest.join('\n') || first,
-        tags: ['movie_camera'],
-        priority: 4,
+        tags: opts.tags || ['movie_camera'],
+        priority: opts.priority || 4,
         click: `${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`,
       }),
     });
@@ -220,7 +221,7 @@ async function sendNtfy(text) {
   }
 }
 
-async function notify(text) {
+async function notify(text, opts = {}) {
   if (process.env.DRY_RUN) {
     console.log('--- DRY RUN, would send ---\n' + text);
     return;
@@ -229,9 +230,37 @@ async function notify(text) {
   if (!recipients().length && !hasTelegram && !process.env.NTFY_TOPIC) {
     throw new Error('No alert channel configured: set NTFY_TOPIC, TELEGRAM_* and/or CALLMEBOT_* secrets');
   }
-  const sent = (await sendNtfy(text)) + (await sendTelegram(text)) + (await sendWhatsApp(text));
+  const sent = (await sendNtfy(text, opts)) + (await sendTelegram(text)) + (await sendWhatsApp(text));
   // Fail only if nobody got it, so the run retries next time instead of losing the alert.
   if (!sent) throw new Error('Every alert channel failed');
+}
+
+// Cairo-local date and hour (handles Egypt's daylight saving time).
+function cairoNow() {
+  const parts = Object.fromEntries(
+    new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', hourCycle: 'h23',
+    }).formatToParts(new Date()).map((p) => [p.type, p.value])
+  );
+  return { date: `${parts.year}-${parts.month}-${parts.day}`, hour: Number(parts.hour) };
+}
+
+const HEARTBEAT_HOUR = Number(process.env.HEARTBEAT_HOUR || 10); // Cairo time
+
+function buildHeartbeat(showtimes, title, newCount) {
+  const upcoming = showtimes.filter((s) => s.date >= cairoNow().date.replace(/-/g, ''));
+  const days = [...new Set(upcoming.map((s) => s.date))].sort();
+  const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const lines = [`✅ VOX agent is running`];
+  lines.push(`Watching ${title || MOVIE} at VOX ${cinema}.`);
+  lines.push(
+    days.length
+      ? `${upcoming.length} upcoming showtimes on ${days.length} day(s): ${fmtDate(days[0])} to ${fmtDate(days[days.length - 1])}.`
+      : 'No upcoming showtimes listed right now.'
+  );
+  if (newCount) lines.push(`${newCount} new showtime(s) found in this check (alert sent separately).`);
+  lines.push('Checks every 15 minutes. If this message stops arriving, the agent needs attention.');
+  return lines.join('\n');
 }
 
 (async () => {
@@ -252,13 +281,28 @@ async function notify(text) {
     console.log('No new showtimes.');
   }
 
+  // Once a day after HEARTBEAT_HOUR (Cairo), confirm the agent is alive. Any run from 10:00 on
+  // can send it, so a late GitHub schedule still delivers it, just a bit after 10.
+  let lastHeartbeat = prev?.lastHeartbeat;
+  const now = cairoNow();
+  if (now.hour >= HEARTBEAT_HOUR && lastHeartbeat !== now.date) {
+    try {
+      await notify(buildHeartbeat(showtimes, title, newOnes.length), { priority: 2, tags: ['white_check_mark'] });
+      lastHeartbeat = now.date;
+      console.log('Daily status message sent.');
+    } catch (e) {
+      console.error(`Daily status message failed, will retry next run: ${e.message}`);
+    }
+  }
+
   // Keep previously-seen past showtimes too, so they never re-trigger.
   const merged = new Map((prev?.showtimes || []).map((s) => [s.id, s]));
   for (const s of showtimes) merged.set(s.id, s);
   const sorted = [...merged.values()].sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id));
   // Only rewrite the file when the set of showtimes changed, so the repo isn't committed to every run.
-  if (!prev || JSON.stringify(prev.showtimes) !== JSON.stringify(sorted)) {
-    fs.writeFileSync(STATE_FILE, JSON.stringify({ updatedAt: new Date().toISOString(), showtimes: sorted }, null, 2) + '\n');
+  if (!prev || JSON.stringify(prev.showtimes) !== JSON.stringify(sorted) || prev.lastHeartbeat !== lastHeartbeat) {
+    const state = { updatedAt: new Date().toISOString(), lastHeartbeat, showtimes: sorted };
+    fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n');
   }
 })().catch((e) => {
   console.error(e);
