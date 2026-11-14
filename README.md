@@ -1,16 +1,22 @@
 # VOX showtime agent
 
-Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) and sends a Telegram and/or WhatsApp message when new showtimes appear. Runs on GitHub Actions every 15 minutes.
+Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) and sends an alert (ntfy push, Telegram and/or WhatsApp) when new showtimes appear. Runs on GitHub Actions every 15 minutes.
 
 ## How it works
 1. Playwright drives a real Google Chrome (under a virtual display on GitHub Actions) to open the VOX showtimes page. The site's Akamai bot protection blocks plain HTTP clients and Playwright's headless Chromium, so a real browser is needed.
 2. It loads every date tab for `dune-part-three` at `city-centre-almaza` and collects each showtime's booking ID.
-3. It compares them with `state.json`. Any ID not seen before triggers one alert (Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
+3. It compares them with `state.json`. Any ID not seen before triggers one alert (ntfy, Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
 4. When the set of showtimes changes, the workflow commits the updated `state.json` back to the repo.
 
 ## One-time setup
-Set up Telegram, WhatsApp (CallMeBot), or both. Every alert goes to all configured channels,
-and a run only fails if none of them worked.
+Set up any of ntfy, Telegram or WhatsApp (CallMeBot). Every alert goes to all configured
+channels, and a run only fails if none of them worked.
+
+### ntfy (easiest: free, no account, push notifications)
+1. Install the **ntfy** app (iOS / Android) and subscribe to your topic (server `ntfy.sh`).
+   Anyone else who subscribes to the same topic gets the alerts too.
+2. Repo secret: `NTFY_TOPIC`. Use a long random name, because anyone who knows it can read
+   the alerts. Tapping an alert opens the VOX booking page.
 
 ### Telegram (reliable, free, works in groups)
 1. In Telegram, message **@BotFather**, send `/newbot`, pick a name and username. It gives you a **token**.

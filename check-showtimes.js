@@ -1,5 +1,5 @@
 // Checks VOX Cinemas Egypt for new showtimes of a movie at one cinema,
-// and sends Telegram and/or WhatsApp (CallMeBot) alerts when new ones appear.
+// and sends ntfy, Telegram and/or WhatsApp (CallMeBot) alerts when new ones appear.
 //
 // Env vars:
 //   CALLMEBOT_PHONE   your WhatsApp number with country code, e.g. +2010xxxxxxxx
@@ -7,6 +7,7 @@
 //   CALLMEBOT_RECIPIENTS  optional extra people, "+2010xxxx:key1,+2011xxxx:key2"
 //   TELEGRAM_BOT_TOKEN    token from @BotFather
 //   TELEGRAM_CHAT_ID      chat id(s) to alert, comma-separated (people or groups)
+//   NTFY_TOPIC            ntfy.sh topic to push to (NTFY_SERVER to self-host)
 //   MOVIE_SLUG        default: dune-part-three
 //   CINEMA_SLUG       default: city-centre-almaza
 //   DRY_RUN=1         print the alert instead of sending it
@@ -190,16 +191,45 @@ async function sendTelegram(text) {
   return sent;
 }
 
+// ntfy.sh push notifications: no account needed, just subscribe to the topic in the ntfy app.
+// Returns 1 if delivered, 0 if not configured or failed.
+async function sendNtfy(text) {
+  const topic = (process.env.NTFY_TOPIC || '').trim();
+  if (!topic) return 0;
+  const server = (process.env.NTFY_SERVER || 'https://ntfy.sh').replace(/\/$/, '');
+  const [first, ...rest] = text.split('\n');
+  try {
+    const r = await fetch(server, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        topic,
+        title: first.replace(/^🎬\s*/, ''),
+        message: rest.join('\n') || first,
+        tags: ['movie_camera'],
+        priority: 4,
+        click: `${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`,
+      }),
+    });
+    if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    console.log('ntfy alert sent.');
+    return 1;
+  } catch (e) {
+    console.error(`ntfy failed: ${e.message}`);
+    return 0;
+  }
+}
+
 async function notify(text) {
   if (process.env.DRY_RUN) {
     console.log('--- DRY RUN, would send ---\n' + text);
     return;
   }
   const hasTelegram = process.env.TELEGRAM_BOT_TOKEN && process.env.TELEGRAM_CHAT_ID;
-  if (!recipients().length && !hasTelegram) {
-    throw new Error('No alert channel configured: set TELEGRAM_* and/or CALLMEBOT_* secrets');
+  if (!recipients().length && !hasTelegram && !process.env.NTFY_TOPIC) {
+    throw new Error('No alert channel configured: set NTFY_TOPIC, TELEGRAM_* and/or CALLMEBOT_* secrets');
   }
-  const sent = (await sendTelegram(text)) + (await sendWhatsApp(text));
+  const sent = (await sendNtfy(text)) + (await sendTelegram(text)) + (await sendWhatsApp(text));
   // Fail only if nobody got it, so the run retries next time instead of losing the alert.
   if (!sent) throw new Error('Every alert channel failed');
 }
