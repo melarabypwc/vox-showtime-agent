@@ -169,7 +169,10 @@ async function sendWhatsApp(text) {
   const merged = new Map((prev?.showtimes || []).map((s) => [s.id, s]));
   for (const s of showtimes) merged.set(s.id, s);
   const sorted = [...merged.values()].sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id));
-  fs.writeFileSync(STATE_FILE, JSON.stringify({ updatedAt: new Date().toISOString(), showtimes: sorted }, null, 2) + '\n');
+  // Only rewrite the file when the set of showtimes changed, so the repo isn't committed to every run.
+  if (!prev || JSON.stringify(prev.showtimes) !== JSON.stringify(sorted)) {
+    fs.writeFileSync(STATE_FILE, JSON.stringify({ updatedAt: new Date().toISOString(), showtimes: sorted }, null, 2) + '\n');
+  }
 })().catch((e) => {
   console.error(e);
   process.exit(1);
