@@ -4,6 +4,7 @@
 // Env vars:
 //   CALLMEBOT_PHONE   your WhatsApp number with country code, e.g. +2010xxxxxxxx
 //   CALLMEBOT_APIKEY  the key CallMeBot sent you
+//   CALLMEBOT_RECIPIENTS  optional extra people, "+2010xxxx:key1,+2011xxxx:key2"
 //   MOVIE_SLUG        default: dune-part-three
 //   CINEMA_SLUG       default: city-centre-almaza
 //   DRY_RUN=1         print the alert instead of sending it
@@ -128,23 +129,44 @@ function buildMessage(newOnes, title) {
   return lines.join('\n');
 }
 
+// Everyone gets their own CallMeBot key (the free API can only message the number that
+// activated it). CALLMEBOT_RECIPIENTS adds more people: "+2010xxxx:key1,+2011xxxx:key2".
+function recipients() {
+  const list = [];
+  if (process.env.CALLMEBOT_PHONE && process.env.CALLMEBOT_APIKEY) {
+    list.push({ phone: process.env.CALLMEBOT_PHONE.trim(), apikey: process.env.CALLMEBOT_APIKEY.trim() });
+  }
+  for (const entry of (process.env.CALLMEBOT_RECIPIENTS || '').split(/[,\n]/)) {
+    const [phone, apikey] = entry.split(':').map((x) => x && x.trim());
+    if (phone && apikey) list.push({ phone, apikey });
+  }
+  return list;
+}
+
 async function sendWhatsApp(text) {
   if (process.env.DRY_RUN) {
     console.log('--- DRY RUN, would send ---\n' + text);
     return;
   }
-  const phone = process.env.CALLMEBOT_PHONE;
-  const apikey = process.env.CALLMEBOT_APIKEY;
-  if (!phone || !apikey) throw new Error('CALLMEBOT_PHONE and CALLMEBOT_APIKEY must be set');
-  const url =
-    'https://api.callmebot.com/whatsapp.php?' +
-    new URLSearchParams({ phone, apikey, text }).toString();
-  const r = await fetch(url);
-  const body = await r.text();
-  if (!r.ok || /error|invalid/i.test(body.slice(0, 500))) {
-    throw new Error(`CallMeBot failed (HTTP ${r.status}): ${body.slice(0, 300)}`);
+  const people = recipients();
+  if (!people.length) throw new Error('Set CALLMEBOT_PHONE + CALLMEBOT_APIKEY and/or CALLMEBOT_RECIPIENTS');
+  let sent = 0;
+  for (const { phone, apikey } of people) {
+    const masked = phone.slice(0, 4) + '…' + phone.slice(-3);
+    try {
+      const url = 'https://api.callmebot.com/whatsapp.php?' + new URLSearchParams({ phone, apikey, text });
+      const r = await fetch(url);
+      const body = await r.text();
+      if (!r.ok || /error|invalid/i.test(body.slice(0, 500))) throw new Error(`HTTP ${r.status}: ${body.slice(0, 200)}`);
+      console.log(`WhatsApp alert queued for ${masked}.`);
+      sent++;
+    } catch (e) {
+      console.error(`CallMeBot failed for ${masked}: ${e.message}`);
+    }
+    await new Promise((res) => setTimeout(res, 2000)); // CallMeBot rate-limits rapid calls
   }
-  console.log('WhatsApp alert sent.');
+  // Fail only if nobody got it, so the run retries next time instead of losing the alert.
+  if (!sent) throw new Error('CallMeBot failed for every recipient');
 }
 
 (async () => {

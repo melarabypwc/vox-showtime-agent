@@ -17,6 +17,9 @@ Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) 
 2. **Repo secrets** (Settings → Secrets and variables → Actions):
    - `CALLMEBOT_PHONE`: your number with country code, e.g. `+2010xxxxxxxx`
    - `CALLMEBOT_APIKEY`: the key from step 1
+   - `CALLMEBOT_RECIPIENTS` (optional): more people to alert, as `+2010xxxx:key1,+2011xxxx:key2`.
+     Each person does step 1 on their own phone to get their own key. CallMeBot's free API
+     can't post into a WhatsApp group, so this sends each person the alert individually.
 3. Push this folder to a GitHub repo. Then go to Actions → *Check Dune showtimes* → **Run workflow** once to test.
 
 ## Run locally
