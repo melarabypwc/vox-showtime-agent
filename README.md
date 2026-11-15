@@ -20,6 +20,14 @@ channels, and a run only fails if none of them worked.
    Anyone else who subscribes to the same topic gets the alerts too.
 2. Repo secret: `NTFY_TOPIC`. Use a long random name, because anyone who knows it can read
    the alerts. Tapping an alert opens the VOX booking page.
+3. New-showtime alerts are sent at ntfy's **urgent** priority (status messages are quiet).
+   To make them impossible to miss:
+   - **Android:** ntfy → Settings → turn on *Keep alerting for highest priority* (rings until
+     you open it); in the topic's settings pick a loud custom sound; allow ntfy to override
+     Do Not Disturb.
+   - **iPhone:** Settings → Notifications → ntfy → allow *Time Sensitive Notifications* and
+     *Critical Alerts* if offered, banner style *Persistent*; add ntfy to your Focus modes'
+     allowed apps.
 
 ### Telegram (reliable, free, works in groups)
 1. In Telegram, message **@BotFather**, send `/newbot`, pick a name and username. It gives you a **token**.

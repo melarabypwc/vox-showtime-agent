@@ -135,7 +135,7 @@ function buildMessage(newOnes, title) {
   const byDate = {};
   for (const s of newOnes) ((byDate[s.date] ||= {})[s.format] ||= []).push(s.time);
   const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const lines = [`🎬 New ${title || MOVIE} showtimes at VOX ${cinema}:`];
+  const lines = [`🚨 NEW SHOWTIMES: ${title || MOVIE} at VOX ${cinema}`];
   for (const d of Object.keys(byDate).sort()) {
     const formats = Object.entries(byDate[d]);
     if (formats.length === 1) {
@@ -224,11 +224,13 @@ async function sendNtfy(text, opts = {}) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         topic,
-        title: first.replace(/^(🎬|✅)\s*/, ''),
+        title: first.replace(/^(🚨|🎬|✅)\s*/, ''),
         message: rest.join('\n') || first,
-        tags: opts.tags || ['movie_camera'],
-        priority: opts.priority || 4,
+        tags: opts.tags || ['rotating_light', 'movie_camera'],
+        // 5 = "urgent": loudest sound, long vibration, pops over other apps on Android.
+        priority: opts.priority || 5,
         click: `${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`,
+        actions: [{ action: 'view', label: '🎟 Book now', url: `${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`, clear: true }],
       }),
     });
     if (!r.ok) throw new Error(`HTTP ${r.status}: ${(await r.text()).slice(0, 200)}`);
