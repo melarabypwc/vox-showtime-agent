@@ -1,5 +1,5 @@
 {
-  "updatedAt": "2026-11-15T12:13:05.243Z",
+  "updatedAt": "2026-11-15T14:09:42.459Z",
   "lastHeartbeat": "2026-11-15",
   "showtimes": [
     {
@@ -70,6 +70,13 @@
       "format": "Standard",
       "time": "7:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-277901",
+      "date": "20261115"
+    },
+    {
+      "id": "0047-277907",
+      "format": "GOLD",
+      "time": "11:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-277907",
       "date": "20261115"
     },
     {
