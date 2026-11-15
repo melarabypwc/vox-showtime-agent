@@ -20,6 +20,14 @@ on:
         description: "TEST: make checks fail to prove the 'can't check' alert works"
         type: boolean
         default: false
+      prior_failures:
+        description: "Internal: failed attempts in a row before this run"
+        type: string
+        default: "0"
+      first_fail_ts:
+        description: "Internal: when the current failure streak started (unix time)"
+        type: string
+        default: "0"
 
 permissions:
   contents: write
@@ -60,6 +68,8 @@ jobs:
         env:
           SKIP_GAP_ALERT: ${{ inputs.skip_gap_alert }}
           LOOP_MINUTES: ${{ inputs.loop_minutes }}
+          PRIOR_FAILURES: ${{ inputs.prior_failures }}
+          FIRST_FAIL_TS: ${{ inputs.first_fail_ts }}
         run: |
           export LOOP_SECONDS=$(( ${LOOP_MINUTES:-340} * 60 ))
           if [ "${{ inputs.test_failure }}" = "true" ]; then
@@ -74,8 +84,9 @@ jobs:
           waiting=$(gh run list --workflow check.yml --limit 20 --json databaseId,status \
             --jq "[.[] | select(.databaseId != ${{ github.run_id }}) | select(.status==\"queued\" or .status==\"pending\" or .status==\"waiting\" or .status==\"requested\" or .status==\"in_progress\")] | length")
           if [ "$waiting" = "0" ]; then
-            gh workflow run check.yml --ref main
-            echo "Started the next run."
+            gh workflow run check.yml --ref main \
+              -f prior_failures="${NEXT_PRIOR_FAILURES:-0}" -f first_fail_ts="${NEXT_FIRST_FAIL_TS:-0}"
+            echo "Started the next run (prior failures: ${NEXT_PRIOR_FAILURES:-0})."
           else
             echo "$waiting run(s) already waiting; they'll continue the checks."
           fi

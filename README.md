@@ -21,8 +21,12 @@ the checks. Instead each workflow run executes `run-loop.sh`: it checks all movi
 minutes for ~5h40m, then the last step starts the next run itself. The cron schedule (twice an
 hour) is only a backup that restarts the chain if it ever breaks.
 
+If VOX blocks the GitHub machine a run is on (HTTP 403), the run retries once after a minute,
+then ends early so the next run starts on a fresh machine with a different IP. Repeated
+failures back off to 5 and then 15 minutes between attempts.
+
 You get an urgent alert if:
-- checks fail for an hour straight ("can't check showtimes"), and another when they recover;
+- checks keep failing for ~30 min ("can't check showtimes"), and another when they recover;
 - the chain broke and had to be restarted ("agent was paused", with the time range missed).
 
 The repo is public so Actions minutes are unlimited (a private repo's 2,000 free minutes a
