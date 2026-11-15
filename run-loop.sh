@@ -25,7 +25,8 @@ last_end=$(gh run list --workflow check.yml --status completed --limit 5 --json 
 if [ -n "$last_end" ] && [ "${SKIP_GAP_ALERT:-false}" != "true" ]; then
   last_ts=$(date -d "$last_end" +%s)
   gap=$(( $(date +%s) - last_ts ))
-  if [ "$gap" -gt 2700 ]; then  # 45 min
+  echo "Previous run ended $(cairo "$last_ts") Cairo, ${gap}s ago."
+  if [ "$gap" -gt "${GAP_ALERT_SECONDS:-2700}" ]; then  # 45 min
     alert "⚠️ VOX agent was paused
 No checks ran from $(cairo "$last_ts") to $(cairo "$(date +%s)") Cairo time (GitHub stopped the run).
 It has restarted itself and is checking again."
