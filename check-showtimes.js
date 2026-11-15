@@ -292,7 +292,7 @@ function buildHeartbeat(showtimes, title, newCount) {
   return lines.join('\n');
 }
 
-(async () => {
+async function main() {
   const prev = loadState();
   const { dates, showtimes, title } = await scrape();
   console.log(`Checked ${dates.length} dates, found ${showtimes.length} showtimes for ${MOVIE}.`);
@@ -333,7 +333,16 @@ function buildHeartbeat(showtimes, title, newCount) {
     const state = { updatedAt: new Date().toISOString(), lastHeartbeat, showtimes: sorted };
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n');
   }
-})().catch((e) => {
-  console.error(e);
-  process.exit(1);
-});
+}
+
+module.exports = { notify };
+
+// `node check-showtimes.js` runs a check; `node check-showtimes.js --alert "text"` just sends an urgent alert.
+if (require.main === module) {
+  const i = process.argv.indexOf('--alert');
+  const job = i > -1 ? notify(process.argv[i + 1], { priority: 5, tags: ['warning'] }) : main();
+  job.catch((e) => {
+    console.error(e);
+    process.exit(1);
+  });
+}

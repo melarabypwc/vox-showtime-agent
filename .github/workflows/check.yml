@@ -1,12 +1,29 @@
 name: Check VOX showtimes
 
+# Each run checks every 15 min for ~5h40m (run-loop.sh), then starts the next run itself,
+# so checking never stops. GitHub's own schedule is only a backup that restarts the chain
+# if it ever breaks; while a run is active, scheduled runs just wait and then hand over.
 on:
   schedule:
-    - cron: "*/15 * * * *"   # every 15 min (GitHub may delay scheduled runs)
+    - cron: "7,37 * * * *"
   workflow_dispatch:
+    inputs:
+      skip_gap_alert:
+        description: "Don't send the 'agent was paused' alert on this start"
+        type: boolean
+        default: false
+      loop_minutes:
+        description: "How long this run keeps checking (testing only; normal is 340)"
+        type: number
+        default: 340
+      test_failure:
+        description: "TEST: make checks fail to prove the 'can't check' alert works"
+        type: boolean
+        default: false
 
 permissions:
   contents: write
+  actions: write
 
 concurrency:
   group: showtime-check
@@ -15,8 +32,9 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 355
     env:
+      MOVIES: "dune-part-three hadoota-arabic"
       CINEMA_SLUG: city-centre-almaza
       CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
       CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
@@ -26,6 +44,7 @@ jobs:
       NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
       BROWSER_CHANNEL: chrome   # the runner's preinstalled Google Chrome
       HEADED: "1"
+      GH_TOKEN: ${{ github.token }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -33,32 +52,30 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-
-      # One step per movie. A failure in one doesn't stop the others or the state save.
-      - name: Dune Part Three
-        id: dune
-        continue-on-error: true
-        env:
-          MOVIE_SLUG: dune-part-three
-        run: xvfb-run --auto-servernum node check-showtimes.js
-
-      - name: Hadoota
-        id: hadoota
-        continue-on-error: true
-        env:
-          MOVIE_SLUG: hadoota-arabic
-        run: xvfb-run --auto-servernum node check-showtimes.js
-
-      - name: Save state
-        if: always()
-        run: |
+      - run: |
           git config user.name "showtime-bot"
           git config user.email "showtime-bot@users.noreply.github.com"
-          git add -A -- 'state-*.json'
-          git diff --cached --quiet || (git commit -m "Update showtimes state" && git push)
 
-      - name: Report failures
-        if: steps.dune.outcome == 'failure' || steps.hadoota.outcome == 'failure'
+      - name: Check every 15 minutes
+        env:
+          SKIP_GAP_ALERT: ${{ inputs.skip_gap_alert }}
+          LOOP_MINUTES: ${{ inputs.loop_minutes }}
         run: |
-          echo "dune: ${{ steps.dune.outcome }}, hadoota: ${{ steps.hadoota.outcome }}"
-          exit 1
+          export LOOP_SECONDS=$(( ${LOOP_MINUTES:-340} * 60 ))
+          if [ "${{ inputs.test_failure }}" = "true" ]; then
+            export BROWSER_CHANNEL=no-such-browser FAIL_ALERT_AFTER=1 LOOP_SECONDS=60
+          fi
+          bash run-loop.sh
+
+      - name: Start next run
+        if: ${{ !cancelled() && inputs.test_failure != true }}
+        run: |
+          # If a run is already waiting (e.g. a scheduled backup run), it takes over instead.
+          waiting=$(gh run list --workflow check.yml --limit 20 --json databaseId,status \
+            --jq "[.[] | select(.databaseId != ${{ github.run_id }}) | select(.status==\"queued\" or .status==\"pending\" or .status==\"waiting\" or .status==\"requested\" or .status==\"in_progress\")] | length")
+          if [ "$waiting" = "0" ]; then
+            gh workflow run check.yml --ref main
+            echo "Started the next run."
+          else
+            echo "$waiting run(s) already waiting; they'll continue the checks."
+          fi
