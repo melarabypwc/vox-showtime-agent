@@ -5,7 +5,11 @@ Watches **Dune: Part Three** and **Hadoota** at **VOX City Centre Almaza** (egy.
 ## How it works
 1. Playwright drives a real Google Chrome (under a virtual display on GitHub Actions) to open the VOX showtimes page. The site's Akamai bot protection blocks plain HTTP clients and Playwright's headless Chromium, so a real browser is needed.
 2. For each movie in `MOVIES` (in the workflow), it loads every date tab at `city-centre-almaza` and collects each showtime's booking ID.
-3. It compares them with that movie's `state-<movie>.json`. Any ID not seen before triggers one alert (ntfy, Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
+3. It compares them with that movie's `state-<movie>.json` and sends one alert (ntfy, Telegram and/or WhatsApp via CallMeBot) when:
+   - a showtime ID appears that was never seen before (**🚨 NEW SHOWTIMES**). Greyed-out ones
+     (sold out / not on sale yet) are included and marked *(not bookable yet)*;
+   - a showtime that was greyed out becomes bookable for the first time (**🎟 BOOKING OPEN**).
+     Each showtime only triggers this once, so seats opening and closing again don't re-alert.
 4. When the set of showtimes changes, the workflow commits the updated state files back to the repo.
 5. Once a day, the first successful check at or after **10:00 Cairo time** sends a short
    "✅ VOX agent is running" status message per movie to the same channels. If it stops arriving, the

@@ -80,8 +80,13 @@ async function scrape() {
       document.querySelectorAll(`article.movie-compare[data-slug="${movie}"]`).forEach((art) => {
         art.querySelectorAll('ol.showtimes > li').forEach((fmtLi) => {
           const format = fmtLi.querySelector('strong')?.textContent.trim() || 'Standard';
-          fmtLi.querySelectorAll('a.showtime').forEach((a) => {
-            out.push({ id: a.dataset.id, format, time: a.textContent.trim(), url: a.href });
+          // Bookable times are <a class="showtime">; sold-out / not-on-sale ones are
+          // <span class="showtime unavailable">. Read both.
+          fmtLi.querySelectorAll('.showtime').forEach((el) => {
+            const id = el.dataset.id || el.closest('li[data-id]')?.dataset.id;
+            if (!id) return;
+            const bookable = el.tagName === 'A' && !el.classList.contains('unavailable');
+            out.push({ id, format, time: el.textContent.trim(), url: `${location.origin}/booking/${id}`, bookable });
           });
         });
       });
@@ -131,22 +136,34 @@ function timeKey(t) {
   return h * 60 + Number(m[2]);
 }
 
-function buildMessage(newOnes, title) {
+// "• Sun 15 Nov (GOLD): 5:00pm, 11:15pm" lines, grouped by day then format.
+function showtimeLines(list, mark = () => '') {
   const byDate = {};
-  for (const s of newOnes) ((byDate[s.date] ||= {})[s.format] ||= []).push(s.time);
-  const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-  const lines = [`🚨 NEW SHOWTIMES: ${title || MOVIE} at VOX ${cinema}`];
+  for (const s of list) ((byDate[s.date] ||= {})[s.format] ||= []).push(s);
+  const fmt = (arr) => arr.sort((a, b) => timeKey(a.time) - timeKey(b.time)).map((s) => s.time + mark(s)).join(', ');
+  const lines = [];
   for (const d of Object.keys(byDate).sort()) {
-    const formats = Object.entries(byDate[d]);
-    if (formats.length === 1) {
-      const [f, times] = formats[0];
-      lines.push(`• ${fmtDate(d)} (${f}): ${times.sort((a, b) => timeKey(a) - timeKey(b)).join(', ')}`);
-    } else {
+    const formats = Object.entries(byDate[d]).sort((a, b) => a[0].localeCompare(b[0]));
+    if (formats.length === 1) lines.push(`• ${fmtDate(d)} (${formats[0][0]}): ${fmt(formats[0][1])}`);
+    else {
       lines.push(`• ${fmtDate(d)}`);
-      for (const [f, times] of formats.sort((a, b) => a[0].localeCompare(b[0]))) {
-        lines.push(`   ${f}: ${times.sort((a, b) => timeKey(a) - timeKey(b)).join(', ')}`);
-      }
+      for (const [f, arr] of formats) lines.push(`   ${f}: ${fmt(arr)}`);
     }
+  }
+  return lines;
+}
+
+// newOnes: showtimes never seen before. nowBookable: seen before greyed out, bookable for the first time.
+function buildMessage(newOnes, title, nowBookable = []) {
+  const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+  const name = `${title || MOVIE} at VOX ${cinema}`;
+  const notYet = (s) => (s.bookable ? '' : ' (not bookable yet)');
+  const lines = [newOnes.length ? `🚨 NEW SHOWTIMES: ${name}` : `🎟 BOOKING OPEN: ${name}`];
+  if (newOnes.length && nowBookable.length) lines.push('New:');
+  lines.push(...showtimeLines(newOnes, notYet));
+  if (nowBookable.length) {
+    if (newOnes.length) lines.push('Now bookable:');
+    lines.push(...showtimeLines(nowBookable));
   }
   lines.push(`Book: ${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`);
   return lines.join('\n');
@@ -224,7 +241,7 @@ async function sendNtfy(text, opts = {}) {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         topic,
-        title: first.replace(/^(🚨|🎬|✅)\s*/, ''),
+        title: first.replace(/^(🚨|🎟|🎬|✅)\s*/, ''),
         message: rest.join('\n') || first,
         tags: opts.tags || ['rotating_light', 'movie_camera'],
         // 5 = "urgent": loudest sound, long vibration, pops over other apps on Android.
@@ -287,7 +304,9 @@ function buildHeartbeat(showtimes, title, newCount) {
       ? `${what} on ${days.length} day(s): ${fmtDate(days[0])} to ${fmtDate(days[days.length - 1])}.`
       : 'No upcoming showtimes listed right now.'
   );
-  if (newCount) lines.push(`${newCount} new showtime(s) found in this check (alert sent separately).`);
+  const greyed = upcoming.filter((s) => !s.bookable).length;
+  if (greyed) lines.push(`${greyed} of them are sold out or not on sale yet.`);
+  if (newCount) lines.push(`${newCount} new or newly bookable showtime(s) in this check (alert sent separately).`);
   lines.push('Checks every 15 minutes. If this message stops arriving, the agent needs attention.');
   return lines.join('\n');
 }
@@ -297,18 +316,25 @@ async function main() {
   const { dates, showtimes, title } = await scrape();
   console.log(`Checked ${dates.length} dates, found ${showtimes.length} showtimes for ${MOVIE}.`);
 
-  const prevIds = new Set((prev?.showtimes || []).map((s) => s.id));
-  const newOnes = showtimes.filter((s) => !prevIds.has(s.id));
+  // State v1 only recorded bookable showtimes (links). When upgrading, those count as bookable,
+  // and greyed-out showtimes seen for the first time are adopted silently (they existed before).
+  const migrating = prev && prev.version !== 2;
+  const prevById = new Map(
+    (prev?.showtimes || []).map((s) => [s.id, { ...s, bookable: migrating ? true : !!s.bookable }])
+  );
+  const newOnes = showtimes.filter((s) => !prevById.has(s.id) && (!migrating || s.bookable));
+  const nowBookable = showtimes.filter((s) => s.bookable && prevById.has(s.id) && !prevById.get(s.id).bookable);
 
   if (!prev) {
     console.log('First run: saving baseline.');
     if (process.env.ALERT_ON_FIRST_RUN && showtimes.length) await notify(buildMessage(showtimes, title));
-  } else if (newOnes.length) {
-    console.log(`${newOnes.length} new showtime(s).`);
-    await notify(buildMessage(newOnes, title));
+  } else if (newOnes.length || nowBookable.length) {
+    console.log(`${newOnes.length} new showtime(s), ${nowBookable.length} newly bookable.`);
+    await notify(buildMessage(newOnes, title, nowBookable));
   } else {
-    console.log('No new showtimes.');
+    console.log('No new or newly bookable showtimes.');
   }
+  if (migrating) console.log('Upgraded state to v2 (now also tracking greyed-out showtimes).');
 
   // Once a day after HEARTBEAT_HOUR (Cairo), confirm the agent is alive. Any run from 10:00 on
   // can send it, so a late GitHub schedule still delivers it, just a bit after 10.
@@ -316,7 +342,7 @@ async function main() {
   const now = cairoNow();
   if (now.hour >= HEARTBEAT_HOUR && lastHeartbeat !== now.date) {
     try {
-      await notify(buildHeartbeat(showtimes, title, prev ? newOnes.length : 0), { priority: 2, tags: ['white_check_mark'] });
+      await notify(buildHeartbeat(showtimes, title, prev ? newOnes.length + nowBookable.length : 0), { priority: 2, tags: ['white_check_mark'] });
       lastHeartbeat = now.date;
       console.log('Daily status message sent.');
     } catch (e) {
@@ -325,12 +351,13 @@ async function main() {
   }
 
   // Keep previously-seen past showtimes too, so they never re-trigger.
-  const merged = new Map((prev?.showtimes || []).map((s) => [s.id, s]));
-  for (const s of showtimes) merged.set(s.id, s);
+  // `bookable` means "has ever been bookable", so seats opening and closing doesn't re-alert.
+  const merged = new Map(prevById);
+  for (const s of showtimes) merged.set(s.id, { ...s, bookable: s.bookable || !!prevById.get(s.id)?.bookable });
   const sorted = [...merged.values()].sort((a, b) => (a.date + a.id).localeCompare(b.date + b.id));
   // Only rewrite the file when the set of showtimes changed, so the repo isn't committed to every run.
-  if (!prev || JSON.stringify(prev.showtimes) !== JSON.stringify(sorted) || prev.lastHeartbeat !== lastHeartbeat) {
-    const state = { updatedAt: new Date().toISOString(), lastHeartbeat, showtimes: sorted };
+  if (!prev || migrating || JSON.stringify(prev.showtimes) !== JSON.stringify(sorted) || prev.lastHeartbeat !== lastHeartbeat) {
+    const state = { version: 2, updatedAt: new Date().toISOString(), lastHeartbeat, showtimes: sorted };
     fs.writeFileSync(STATE_FILE, JSON.stringify(state, null, 2) + '\n');
   }
 }
