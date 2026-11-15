@@ -1,14 +1,14 @@
 # VOX showtime agent
 
-Watches **Dune: Part Three** at **VOX City Centre Almaza** (egy.voxcinemas.com) and sends an alert (ntfy push, Telegram and/or WhatsApp) when new showtimes appear. Runs on GitHub Actions every 15 minutes.
+Watches **Dune: Part Three** and **Hadoota** at **VOX City Centre Almaza** (egy.voxcinemas.com) and sends an alert (ntfy push, Telegram and/or WhatsApp) when new showtimes appear. Runs on GitHub Actions every 15 minutes.
 
 ## How it works
 1. Playwright drives a real Google Chrome (under a virtual display on GitHub Actions) to open the VOX showtimes page. The site's Akamai bot protection blocks plain HTTP clients and Playwright's headless Chromium, so a real browser is needed.
-2. It loads every date tab for `dune-part-three` at `city-centre-almaza` and collects each showtime's booking ID.
-3. It compares them with `state.json`. Any ID not seen before triggers one alert (ntfy, Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
-4. When the set of showtimes changes, the workflow commits the updated `state.json` back to the repo.
+2. For each movie (one workflow step each), it loads every date tab at `city-centre-almaza` and collects each showtime's booking ID.
+3. It compares them with that movie's `state-<movie>.json`. Any ID not seen before triggers one alert (ntfy, Telegram and/or WhatsApp via CallMeBot), listing the new dates, times and formats (IMAX, Standard, …).
+4. When the set of showtimes changes, the workflow commits the updated state files back to the repo.
 5. Once a day, the first successful check at or after **10:00 Cairo time** sends a short
-   "✅ VOX agent is running" status message to the same channels. If it stops arriving, the
+   "✅ VOX agent is running" status message per movie to the same channels. If it stops arriving, the
    agent is broken (VOX blocking it, the workflow disabled, etc.). Change the hour with `HEARTBEAT_HOUR`.
 
 ## One-time setup
@@ -47,6 +47,13 @@ channels, and a run only fails if none of them worked.
 Secrets live in Settings → Secrets and variables → Actions. Then go to Actions →
 *Check Dune showtimes* → **Run workflow** once to test.
 
+## Watching another movie
+1. Find its slug: open the VOX showtimes page, pick the movie, and copy the `m=` value from the URL
+   (e.g. `hadoota-arabic` in `...showtimes?c=city-centre-almaza&m=hadoota-arabic`).
+2. In `.github/workflows/check.yml`, copy one of the movie steps, give it a new `id`, set
+   `MOVIE_SLUG`, and add its `steps.<id>.outcome` to the *Report failures* condition.
+3. Its first run saves the current showtimes silently; alerts start from the next new one.
+
 ## Run locally
 ```bash
 npm ci
@@ -54,7 +61,7 @@ BROWSER_CHANNEL=chrome DRY_RUN=1 node check-showtimes.js                 # print
 BROWSER_CHANNEL=chrome CALLMEBOT_PHONE=+20... CALLMEBOT_APIKEY=... node check-showtimes.js
 ```
 To watch a different movie or branch, set `MOVIE_SLUG` / `CINEMA_SLUG` (e.g. `mall-of-egypt`).
-Delete `state.json` to reset the baseline. Set `ALERT_ON_FIRST_RUN=1` to also get the current list on the first run.
+Delete a movie's `state-<movie>.json` to reset its baseline. Set `ALERT_ON_FIRST_RUN=1` to also get the current list on the first run.
 
 ## Notes
 - GitHub's cron is best-effort and can run late during busy periods.

@@ -1,4 +1,4 @@
-name: Check Dune showtimes
+name: Check VOX showtimes
 
 on:
   schedule:
@@ -15,7 +15,17 @@ concurrency:
 jobs:
   check:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
+    env:
+      CINEMA_SLUG: city-centre-almaza
+      CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
+      CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
+      CALLMEBOT_RECIPIENTS: ${{ secrets.CALLMEBOT_RECIPIENTS }}
+      TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+      TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+      NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+      BROWSER_CHANNEL: chrome   # the runner's preinstalled Google Chrome
+      HEADED: "1"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -23,20 +33,32 @@ jobs:
           node-version: 20
           cache: npm
       - run: npm ci
-      - name: Check showtimes
+
+      # One step per movie. A failure in one doesn't stop the others or the state save.
+      - name: Dune Part Three
+        id: dune
+        continue-on-error: true
         env:
-          CALLMEBOT_PHONE: ${{ secrets.CALLMEBOT_PHONE }}
-          CALLMEBOT_APIKEY: ${{ secrets.CALLMEBOT_APIKEY }}
-          CALLMEBOT_RECIPIENTS: ${{ secrets.CALLMEBOT_RECIPIENTS }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          BROWSER_CHANNEL: chrome   # the runner's preinstalled Google Chrome
-          HEADED: "1"
+          MOVIE_SLUG: dune-part-three
         run: xvfb-run --auto-servernum node check-showtimes.js
+
+      - name: Hadoota
+        id: hadoota
+        continue-on-error: true
+        env:
+          MOVIE_SLUG: hadoota-arabic
+        run: xvfb-run --auto-servernum node check-showtimes.js
+
       - name: Save state
+        if: always()
         run: |
           git config user.name "showtime-bot"
           git config user.email "showtime-bot@users.noreply.github.com"
-          git add state.json
+          git add -A -- 'state-*.json'
           git diff --cached --quiet || (git commit -m "Update showtimes state" && git push)
+
+      - name: Report failures
+        if: steps.dune.outcome == 'failure' || steps.hadoota.outcome == 'failure'
+        run: |
+          echo "dune: ${{ steps.dune.outcome }}, hadoota: ${{ steps.hadoota.outcome }}"
+          exit 1

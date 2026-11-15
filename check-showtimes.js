@@ -20,7 +20,8 @@ const { chromium } = require('playwright');
 const BASE = 'https://egy.voxcinemas.com';
 const MOVIE = process.env.MOVIE_SLUG || 'dune-part-three';
 const CINEMA = process.env.CINEMA_SLUG || 'city-centre-almaza';
-const STATE_FILE = path.join(__dirname, 'state.json');
+// One state file per movie, so several movies can be watched from the same repo.
+const STATE_FILE = path.join(__dirname, `state-${MOVIE}.json`);
 
 function loadState() {
   try {
@@ -120,14 +121,32 @@ function fmtDate(d) {
   return dt.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' });
 }
 
+// "7:30pm" -> minutes since midnight; VOX's late shows (e.g. 12:30am) count as after 11pm.
+function timeKey(t) {
+  const m = t.match(/(\d{1,2}):(\d{2})\s*(am|pm)/i);
+  if (!m) return 9999;
+  let h = Number(m[1]) % 12;
+  if (m[3].toLowerCase() === 'pm') h += 12;
+  else if (h < 6) h += 24;
+  return h * 60 + Number(m[2]);
+}
+
 function buildMessage(newOnes, title) {
   const byDate = {};
-  for (const s of newOnes) (byDate[s.date] ||= []).push(s);
+  for (const s of newOnes) ((byDate[s.date] ||= {})[s.format] ||= []).push(s.time);
   const cinema = CINEMA.replace(/-/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
   const lines = [`🎬 New ${title || MOVIE} showtimes at VOX ${cinema}:`];
   for (const d of Object.keys(byDate).sort()) {
-    const parts = byDate[d].map((s) => `${s.time} (${s.format})`).join(', ');
-    lines.push(`• ${fmtDate(d)}: ${parts}`);
+    const formats = Object.entries(byDate[d]);
+    if (formats.length === 1) {
+      const [f, times] = formats[0];
+      lines.push(`• ${fmtDate(d)} (${f}): ${times.sort((a, b) => timeKey(a) - timeKey(b)).join(', ')}`);
+    } else {
+      lines.push(`• ${fmtDate(d)}`);
+      for (const [f, times] of formats.sort((a, b) => a[0].localeCompare(b[0]))) {
+        lines.push(`   ${f}: ${times.sort((a, b) => timeKey(a) - timeKey(b)).join(', ')}`);
+      }
+    }
   }
   lines.push(`Book: ${BASE}/showtimes?c=${CINEMA}&m=${MOVIE}`);
   return lines.join('\n');
@@ -295,7 +314,7 @@ function buildHeartbeat(showtimes, title, newCount) {
   const now = cairoNow();
   if (now.hour >= HEARTBEAT_HOUR && lastHeartbeat !== now.date) {
     try {
-      await notify(buildHeartbeat(showtimes, title, newOnes.length), { priority: 2, tags: ['white_check_mark'] });
+      await notify(buildHeartbeat(showtimes, title, prev ? newOnes.length : 0), { priority: 2, tags: ['white_check_mark'] });
       lastHeartbeat = now.date;
       console.log('Daily status message sent.');
     } catch (e) {
