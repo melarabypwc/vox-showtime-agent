@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-17T22:00:20.921Z",
+  "updatedAt": "2026-11-17T23:00:24.089Z",
   "lastHeartbeat": "2026-11-17",
   "showtimes": [
     {
@@ -722,6 +722,14 @@
       "url": "https://egy.voxcinemas.com/booking/0047-278476",
       "bookable": true,
       "date": "20261118"
+    },
+    {
+      "id": "0047-278967",
+      "format": "GOLD",
+      "time": "10:45pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278967",
+      "bookable": false,
+      "date": "20261119"
     }
   ]
 }
