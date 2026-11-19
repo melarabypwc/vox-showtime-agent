@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-19T08:06:20.434Z",
+  "updatedAt": "2026-11-19T19:38:32.882Z",
   "lastHeartbeat": "2026-11-19",
   "showtimes": [
     {
@@ -1148,6 +1148,14 @@
       "date": "20261120"
     },
     {
+      "id": "0047-279064",
+      "format": "Kids",
+      "time": "10:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-279064",
+      "bookable": true,
+      "date": "20261120"
+    },
+    {
       "id": "0047-278520",
       "format": "Standard",
       "time": "5:30pm",
@@ -1336,6 +1344,14 @@
       "format": "GOLD",
       "time": "10:45pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278977",
+      "bookable": true,
+      "date": "20261121"
+    },
+    {
+      "id": "0047-279065",
+      "format": "Kids",
+      "time": "10:30pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-279065",
       "bookable": true,
       "date": "20261121"
     },
