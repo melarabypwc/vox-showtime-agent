@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-19T19:38:32.882Z",
+  "updatedAt": "2026-11-19T22:09:38.957Z",
   "lastHeartbeat": "2026-11-19",
   "showtimes": [
     {
@@ -1152,6 +1152,14 @@
       "format": "Kids",
       "time": "10:00pm",
       "url": "https://egy.voxcinemas.com/booking/0047-279064",
+      "bookable": true,
+      "date": "20261120"
+    },
+    {
+      "id": "0047-279066",
+      "format": "Standard",
+      "time": "11:10pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-279066",
       "bookable": true,
       "date": "20261120"
     },
