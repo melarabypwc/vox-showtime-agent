@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "updatedAt": "2026-11-20T08:11:54.117Z",
+  "updatedAt": "2026-11-20T22:14:13.522Z",
   "lastHeartbeat": "2026-11-20",
   "showtimes": [
     {
@@ -1169,7 +1169,7 @@
       "time": "5:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278520",
       "bookable": true,
-      "date": "20261121"
+      "date": "20261122"
     },
     {
       "id": "0047-278521",
@@ -1177,7 +1177,7 @@
       "time": "8:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278521",
       "bookable": true,
-      "date": "20261121"
+      "date": "20261122"
     },
     {
       "id": "0047-278522",
@@ -1185,183 +1185,7 @@
       "time": "11:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278522",
       "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278555",
-      "format": "MAX",
-      "time": "5:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278555",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278556",
-      "format": "MAX",
-      "time": "8:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278556",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278557",
-      "format": "MAX",
-      "time": "11:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278557",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278586",
-      "format": "Standard",
-      "time": "1:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278586",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278587",
-      "format": "Standard",
-      "time": "4:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278587",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278588",
-      "format": "Standard",
-      "time": "7:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278588",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278589",
-      "format": "Standard",
-      "time": "10:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278589",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278616",
-      "format": "Standard",
-      "time": "12:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278616",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278617",
-      "format": "Standard",
-      "time": "3:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278617",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278619",
-      "format": "Standard",
-      "time": "8:15pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278619",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278620",
-      "format": "Standard",
-      "time": "11:15pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278620",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278938",
-      "format": "GOLD",
-      "time": "12:15pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278938",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278939",
-      "format": "GOLD",
-      "time": "3:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278939",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278940",
-      "format": "GOLD",
-      "time": "5:45pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278940",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278941",
-      "format": "GOLD",
-      "time": "8:30pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278941",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278942",
-      "format": "GOLD",
-      "time": "11:15pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278942",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278973",
-      "format": "GOLD",
-      "time": "11:45am",
-      "url": "https://egy.voxcinemas.com/booking/0047-278973",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278974",
-      "format": "GOLD",
-      "time": "2:30pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278974",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278975",
-      "format": "GOLD",
-      "time": "5:15pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278975",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278976",
-      "format": "GOLD",
-      "time": "8:00pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278976",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-278977",
-      "format": "GOLD",
-      "time": "10:45pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-278977",
-      "bookable": true,
-      "date": "20261121"
-    },
-    {
-      "id": "0047-279065",
-      "format": "Kids",
-      "time": "10:30pm",
-      "url": "https://egy.voxcinemas.com/booking/0047-279065",
-      "bookable": true,
-      "date": "20261121"
+      "date": "20261122"
     },
     {
       "id": "0047-278523",
@@ -1400,6 +1224,30 @@
       "format": "Standard",
       "time": "11:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278527",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278555",
+      "format": "MAX",
+      "time": "5:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278555",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278556",
+      "format": "MAX",
+      "time": "8:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278556",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278557",
+      "format": "MAX",
+      "time": "11:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278557",
       "bookable": true,
       "date": "20261122"
     },
@@ -1444,6 +1292,38 @@
       "date": "20261122"
     },
     {
+      "id": "0047-278586",
+      "format": "Standard",
+      "time": "1:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278586",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278587",
+      "format": "Standard",
+      "time": "4:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278587",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278588",
+      "format": "Standard",
+      "time": "7:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278588",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278589",
+      "format": "Standard",
+      "time": "10:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278589",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
       "id": "0047-278590",
       "format": "Standard",
       "time": "1:00pm",
@@ -1476,6 +1356,38 @@
       "date": "20261122"
     },
     {
+      "id": "0047-278616",
+      "format": "Standard",
+      "time": "12:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278616",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278617",
+      "format": "Standard",
+      "time": "3:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278617",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278619",
+      "format": "Standard",
+      "time": "8:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278619",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278620",
+      "format": "Standard",
+      "time": "11:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278620",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
       "id": "0047-278624",
       "format": "Standard",
       "time": "6:30pm",
@@ -1488,6 +1400,46 @@
       "format": "Standard",
       "time": "9:30pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278625",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278938",
+      "format": "GOLD",
+      "time": "12:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278938",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278939",
+      "format": "GOLD",
+      "time": "3:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278939",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278940",
+      "format": "GOLD",
+      "time": "5:45pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278940",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278941",
+      "format": "GOLD",
+      "time": "8:30pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278941",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278942",
+      "format": "GOLD",
+      "time": "11:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278942",
       "bookable": true,
       "date": "20261122"
     },
@@ -1532,6 +1484,46 @@
       "date": "20261122"
     },
     {
+      "id": "0047-278973",
+      "format": "GOLD",
+      "time": "11:45am",
+      "url": "https://egy.voxcinemas.com/booking/0047-278973",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278974",
+      "format": "GOLD",
+      "time": "2:30pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278974",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278975",
+      "format": "GOLD",
+      "time": "5:15pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278975",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278976",
+      "format": "GOLD",
+      "time": "8:00pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278976",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-278977",
+      "format": "GOLD",
+      "time": "10:45pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-278977",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
       "id": "0047-278978",
       "format": "GOLD",
       "time": "11:45am",
@@ -1568,6 +1560,14 @@
       "format": "GOLD",
       "time": "10:45pm",
       "url": "https://egy.voxcinemas.com/booking/0047-278982",
+      "bookable": true,
+      "date": "20261122"
+    },
+    {
+      "id": "0047-279065",
+      "format": "Kids",
+      "time": "10:30pm",
+      "url": "https://egy.voxcinemas.com/booking/0047-279065",
       "bookable": true,
       "date": "20261122"
     },
